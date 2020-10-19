@@ -76,4 +76,10 @@ functions:
               Fn::GetAtt:
                 - UserPool
                 - Arn
-  
+  postAuthentication:
+    handler: functions/post_authentication.handler
+    events:
+      - cognitoUserPool:
+          pool: ${self:custom.userPoolName}
+          trigger: PostAuthentication
+          existing: true
