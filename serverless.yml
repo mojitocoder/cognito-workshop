@@ -7,6 +7,12 @@ provider:
   runtime: nodejs12.x
   stage: ${self:custom.stage}
   region: eu-west-2
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+      Resource:
+        'Fn::GetAtt': [DDBTable, Arn]
 
 custom:
   stage: ${opt:stage, 'dev'}
@@ -34,9 +40,40 @@ resources:
         GenerateSecret: false
         UserPoolId:
           Ref: UserPool
-
+    DDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: wildrydes-team-a
+        AttributeDefinitions:
+          - AttributeName: RideId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: RideId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+      
   Outputs:
     UserPoolId: 
       Value: !Ref UserPool
     UserPoolClientId:
       Value: !Ref UserPoolClient
+
+functions:
+  requestUnicorn:
+    handler: functions/request_unicorns.handler
+    # role: SlsRydesLambdaRole
+    events:
+      - http:
+          path: ride
+          method: post
+          cors: true
+          authorizer:
+            name: UnicornsAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              Fn::GetAtt:
+                - UserPool
+                - Arn
+  
