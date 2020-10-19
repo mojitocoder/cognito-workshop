@@ -1,0 +1,42 @@
+service: workshop
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${self:custom.stage}
+  region: eu-west-2
+
+custom:
+  stage: ${opt:stage, 'dev'}
+  team: 'team-a'
+  userPoolName: wildrydes-${self:custom.team}-${self:custom.stage}
+  userPoolClientName: wildrydes-client-${self:custom.team}-${self:custom.stage}
+
+resources:
+  Resources:
+    UserPool:
+      Type: "AWS::Cognito::UserPool"
+      Properties:
+        UserPoolName: ${self:custom.userPoolName}
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+            RequireLowercase: False
+            RequireNumbers: True
+            RequireSymbols: False
+            RequireUppercase: True
+    UserPoolClient:
+      Type: "AWS::Cognito::UserPoolClient"
+      Properties:
+        ClientName: ${self:custom.userPoolClientName}
+        GenerateSecret: false
+        UserPoolId:
+          Ref: UserPool
+
+  Outputs:
+    UserPoolId: 
+      Value: !Ref UserPool
+    UserPoolClientId:
+      Value: !Ref UserPoolClient
